@@ -32,92 +32,173 @@ export default {
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   up: async (queryInterface: QueryInterface): Promise<void> => {
-    const transaction = await queryInterface.sequelize.transaction();
-    try {
-      await queryInterface.addColumn(
-        'User',
-        'MovieId',
-        {
-          type: DataTypes.UUIDV4,
-          references: {
-            model: {
-              tableName: 'movie',
-            },
-            key: 'id'
+    // Create show_rooms tables, primaryKey:id
+    await queryInterface.createTable('show_rooms', {
+      id: {
+        type: DataTypes.UUIDV4,
+        unique: true,
+        allowNull: false
+      },
+      allSeats: DataTypes.JSON,
+      premiumSeats:  DataTypes.JSON,
+      premiumStrategy: DataTypes.JSON,
+    });
+    await queryInterface.addIndex('show_rooms',
+      ['id'],
+    );
+    // Create movies tables, primaryKey:id
+    await queryInterface.createTable('movies', {
+      id: {
+        type: DataTypes.UUIDV4,
+        unique: true,
+        allowNull: false
+      },
+      showTime: DataTypes.DATE,
+      during: DataTypes.INTEGER,
+      name: DataTypes.STRING,
+      poster: DataTypes.STRING,
+      trailer: DataTypes.STRING,
+      publishTime: DataTypes.DATE,
+      likes: DataTypes.INTEGER,
+      rating: DataTypes.INTEGER,
+      area: DataTypes.STRING,
+      languages: DataTypes.JSON,
+    });
+    await queryInterface.addIndex(
+      'movies',
+      ['id'],
+    );
+
+    // Create members enum using binary to caculate: {1000: admin, 0001: nomarl, 0010: VIP, 0100: superVIP}, primaryKey:id
+    await queryInterface.createTable('members', {
+      id: {
+        type: DataTypes.INTEGER,
+        unique: true,
+        allowNull: false
+      },
+      name: DataTypes.STRING,
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
+      expireTime: DataTypes.DATE
+    });
+    await queryInterface.addIndex( 'members',
+      ['id'],
+    );
+
+    // Create users tables, primaryKey:id; foreignKey: moviesList, memberId;
+    await queryInterface.createTable('users', {
+      id: {
+        type: DataTypes.UUIDV4,
+        unique: true,
+        allowNull: false
+      },
+      name: DataTypes.STRING,
+      memberId: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: {
+            tableName: 'members',
+            schema: 'schema'
           },
+          key: 'id'
         },
-        { transaction }
-      );
-      await queryInterface.addColumn(
-        'User',
-        'AdministrationId',
-        {
-          type: DataTypes.UUIDV4,
-          references: {
-            model: {
-              tableName: 'administration',
-            },
-            key: 'id'
+        allowNull: true
+      },
+    });
+    queryInterface.addIndex( 'users',
+      ['id'],
+    );
+
+    // Create booked_records tables, primaryKey:id
+    await queryInterface.createTable('booked_records', {
+      id: {
+        type: DataTypes.UUIDV4,
+        unique: true,
+        allowNull: false
+      },
+      createdAt: DataTypes.DATE,
+      isRmoved: DataTypes.BOOLEAN,
+      userId: {
+        type: DataTypes.UUIDV4,
+        references: {
+          model: {
+            tableName: 'users',
+            schema: 'schema'
           },
+          key: 'id'
         },
-        { transaction }
-      );
-      await queryInterface.addColumn(
-        'User',
-        'PricingId',
-        {
-          type: DataTypes.UUIDV4,
-          references: {
-            model: {
-              tableName: 'pricing',
-            },
-            key: 'id'
+        allowNull: true
+      },
+      movie: {
+        type: DataTypes.UUIDV4,
+        references: {
+          model: {
+            tableName: 'movies',
+            schema: 'schema'
           },
+          key: 'id'
         },
-        { transaction }
-      );
-      await queryInterface.addColumn(
-        'User',
-        'Seating',
-        {
-          type: DataTypes.JSON,
+      },
+    });
+    await queryInterface.addIndex( 'booked_records',
+      ['id'],
+    );
+    // Create arrange_show_records tables, primaryKey:id
+    await queryInterface.createTable('arrange_show_records', {
+      id: {
+        type: DataTypes.UUIDV4,
+        unique: true,
+        allowNull: false
+      },
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
+      isRmoved: DataTypes.BOOLEAN,
+      userId: {
+        type: DataTypes.UUIDV4,
+        references: {
+          model: {
+            tableName: 'users',
+            schema: 'schema'
+          },
+          key: 'id'
         },
-        { transaction }
-      );
-      await queryInterface.addColumn(
-        'User',
-        'UserId',
-        {
-          type: DataTypes.UUIDV4,
-          unique: true,
-          primaryKey: true,
+        allowNull: false
+      },
+      movie: {
+        type: DataTypes.UUIDV4,
+        references: {
+          model: {
+            tableName: 'movies',
+            schema: 'schema'
+          },
+          key: 'id'
         },
-        { transaction }
-      );
-      await queryInterface.addIndex(
-        'User',
-        ['UserId'],
-        {
-          unique: true,
-          transaction,
-        }
-      );
-      await transaction.commit();
-    } catch (err) {
-      await transaction.rollback();
-      throw err;
-    }
+      },
+      show_room: {
+        type: DataTypes.UUIDV4,
+        references: {
+          model: {
+            tableName: 'show_rooms',
+            schema: 'schema'
+          },
+          key: 'id'
+        },
+      }
+    });
+    await queryInterface.addIndex( 'arrange_show_records',
+      ['id'],
+    );
   },
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   down: async (queryInterface: QueryInterface) => {
-    const transaction = await queryInterface.sequelize.transaction();
-    try {
-      await queryInterface.removeColumn('User', 'petName', { transaction });
-      await transaction.commit();
-    } catch (err) {
-      await transaction.rollback();
-      throw err;
-    }
+    // todo 
+    // await queryInterface.dropTable('show_rooms');
+    // await queryInterface.dropTable('movies');
+    // await queryInterface.dropTable('members');
+    // await queryInterface.dropTable('users');
+    // await queryInterface.dropTable('booked_records');
+    // await queryInterface.dropTable('arrange_show_records');
+    // await queryInterface.dropTable('UserStory');
   },
 };
