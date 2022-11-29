@@ -1,6 +1,7 @@
 import Event from './entities/event.entity';
 import Workshop from './entities/workshop.entity';
-import { Op } from 'sequelize';
+import { NOW, Op } from 'sequelize';
+import * as moment from 'moment';
 
 export class EventsService {
 
@@ -176,6 +177,17 @@ export class EventsService {
     ```
      */
   async getFutureEventWithWorkshops() {
-    throw new Error('TODO task 2');
+    // throw new Error('TODO task 2');
+    const events = await this.getEventsWithWorkshops();
+    const now = moment.now();
+    const result =  events.filter((event) => {
+      const workshop = event?.workshops[0];
+      // the DB data is wrong about month:  2023-21-29 10:21:08
+      const year = workshop.start.substring(0, 4);
+      const workshopYear = new Date().setFullYear(year);
+      const workshopTime = moment(workshopYear);
+      return workshopTime.isAfter(now);
+    })
+    return result;
   }
 }
