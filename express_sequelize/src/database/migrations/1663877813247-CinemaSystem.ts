@@ -1,4 +1,4 @@
-import { QueryInterface } from 'sequelize';
+import { QueryInterface, DataTypes } from 'sequelize';
 
 export default {
   /**
@@ -31,12 +31,93 @@ export default {
    * As a cinema owner I don't want to configure the seating for every show
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  up: (queryInterface: QueryInterface): Promise<void> => {
-    throw new Error('TODO: implement migration in task 4');
+  up: async (queryInterface: QueryInterface): Promise<void> => {
+    const transaction = await queryInterface.sequelize.transaction();
+    try {
+      await queryInterface.addColumn(
+        'User',
+        'MovieId',
+        {
+          type: DataTypes.UUIDV4,
+          references: {
+            model: {
+              tableName: 'movie',
+            },
+            key: 'id'
+          },
+        },
+        { transaction }
+      );
+      await queryInterface.addColumn(
+        'User',
+        'AdministrationId',
+        {
+          type: DataTypes.UUIDV4,
+          references: {
+            model: {
+              tableName: 'administration',
+            },
+            key: 'id'
+          },
+        },
+        { transaction }
+      );
+      await queryInterface.addColumn(
+        'User',
+        'PricingId',
+        {
+          type: DataTypes.UUIDV4,
+          references: {
+            model: {
+              tableName: 'pricing',
+            },
+            key: 'id'
+          },
+        },
+        { transaction }
+      );
+      await queryInterface.addColumn(
+        'User',
+        'Seating',
+        {
+          type: DataTypes.JSON,
+        },
+        { transaction }
+      );
+      await queryInterface.addColumn(
+        'User',
+        'UserId',
+        {
+          type: DataTypes.UUIDV4,
+          unique: true,
+          primaryKey: true,
+        },
+        { transaction }
+      );
+      await queryInterface.addIndex(
+        'User',
+        ['UserId'],
+        {
+          unique: true,
+          transaction,
+        }
+      );
+      await transaction.commit();
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
+    }
   },
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  down: (queryInterface: QueryInterface) => {
-    // do nothing
+  down: async (queryInterface: QueryInterface) => {
+    const transaction = await queryInterface.sequelize.transaction();
+    try {
+      await queryInterface.removeColumn('User', 'petName', { transaction });
+      await transaction.commit();
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
+    }
   },
 };

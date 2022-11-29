@@ -1,5 +1,6 @@
 import Event from './entities/event.entity';
-
+import Workshop from './entities/workshop.entity';
+import { Op } from 'sequelize';
 
 export class EventsService {
 
@@ -85,7 +86,27 @@ export class EventsService {
      */
 
   async getEventsWithWorkshops() {
-    throw new Error('TODO task 1');
+    const events = await Event.findAll({raw: true});
+    const eventsId = events.map( (event) => {
+      return event.id;
+    })
+    const workshops = await Workshop.findAll({
+      where: {
+        eventId: {
+          [Op.in]: [...eventsId]
+        }
+      },
+      raw: true
+    });
+    const result = events.map( (event: any) => {
+      const eventId = event.id;
+      event['workshops'] = workshops.filter((workshop) => {
+        return workshop.eventId === eventId
+      })
+      return event;
+    });
+    return result;
+    // throw new Error('TODO task 1');
   }
 
   /* TODO: complete getFutureEventWithWorkshops so that it returns events with workshops, that have not yet started
