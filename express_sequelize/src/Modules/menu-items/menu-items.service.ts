@@ -1,5 +1,5 @@
+import MenuItem from "./entities/menu-item.entity";
 export class MenuItemsService {
-
   /* TODO: complete getMenuItems so that it returns a nested menu structure
     Requirements:
     - your code should result in EXACTLY one SQL query no matter the nesting level or the amount of menu items.
@@ -76,6 +76,43 @@ export class MenuItemsService {
   */
 
   async getMenuItems() {
-    throw new Error('TODO in task 3');
+    // throw new Error('TODO in task 3');
+    const menus = await MenuItem.findAll({
+      raw: true
+    });
+    const TopMenus: any = [];
+    const MenuItems: any= {};
+    menus.map( (menuItem: any) => {
+        const { id, parentId } = menuItem;
+        MenuItems[id] = menuItem;
+        if (!MenuItems[id].children ) {
+            MenuItems[id].children = [];
+        }
+        if (parentId !== null) {
+            const parentItem = MenuItems[parentId];
+            if (parentItem?.children) {
+                parentItem.children.push(menuItem);
+            } else {
+                MenuItems[parentId].children = [menuItem];
+            }
+        } else {
+            TopMenus.push(menuItem);
+        }
+    });
+    // BFS aggregation childrens
+    let queue = [...TopMenus];
+    while (queue.length) {
+        let item = queue.shift();
+        const children = MenuItems[item.id];
+        if (children.length > 0) {
+            for(let child of children) {
+                if (MenuItems[child.id].children.length > 0) {
+                    child.children = MenuItems[child.id].children;
+                }
+                queue.push(child);
+            }
+        }
+    }
+    return TopMenus;
   }
 }
